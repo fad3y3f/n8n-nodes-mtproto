@@ -1,0 +1,62 @@
+{
+  "name": "@fad3y3f/n8n-nodes-mtproto",
+  "version": "1.0.1",
+  "description": "n8n nodes for Telegram MTProto API with integrated telegram client",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "telegram",
+    "mtproto",
+    "gramjs"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/fad3y3f/n8n-nodes-mtproto",
+  "author": {
+    "name": "Ilia Fadeev",
+    "email": "ilia@fadeyef.ru",
+    "url": "https://github.com/fad3y3f"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fad3y3f/n8n-nodes-mtproto.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fad3y3f/n8n-nodes-mtproto/issues"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "node esbuild.config.js",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials --ext .ts",
+    "lintfix": "eslint nodes credentials --ext .ts --fix",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/MTProtoApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/MTProto/MTProto.node.js",
+      "dist/nodes/MTProto/MTProtoAuth.node.js",
+      "dist/nodes/MTProto/MTProtoTrigger.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "esbuild": "^0.27.2",
+    "n8n-workflow": "^1.0.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "big-integer": "^1.6.52",
+    "telegram": "^2.22.2"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  }
+}

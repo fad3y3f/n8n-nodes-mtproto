@@ -1,0 +1,30 @@
+# Source files
+nodes/
+credentials/
+scripts/
+
+# Config files
+tsconfig.json
+gulpfile.js
+esbuild.config.js
+.eslintrc.js
+.prettierrc
+
+# Dev files
+*.ts
+!dist/**/*.js
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Misc
+node_modules
+*.log
+*.tgz
