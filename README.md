@@ -13,22 +13,39 @@ This package provides full MTProto protocol access to Telegram, allowing you to:
 - **Contacts**: Get contacts list, search users globally
 - **Users**: Get user info, profile photos
 - **Account**: Get current account info, manage sessions
-- **Authentication**: Built-in auth flow for session generation directly in n8n
 
 ## Installation
 
-### In n8n
+### In n8n (Docker)
 
-1. Go to **Settings** → **Community Nodes**
-2. Click **Install a community node**
-3. Enter `@fad3y3f/n8n-nodes-mtproto`
-4. Click **Install**
+1. Build the package:
+```bash
+npm install
+npm run build
+```
 
-### Manual Installation
+2. Copy the built package to your n8n custom nodes directory:
+```bash
+# If using Docker
+docker cp dist/ n8n:/home/node/.n8n/custom/node_modules/n8n-nodes-mtproto/
+
+# Or mount as volume in docker-compose.yml:
+volumes:
+  - ./n8n-nodes-mtproto:/home/node/.n8n/custom/node_modules/n8n-nodes-mtproto
+```
+
+### In n8n (npm global)
 
 ```bash
 cd ~/.n8n/custom
-npm install @fad3y3f/n8n-nodes-mtproto
+npm install /path/to/n8n-nodes-mtproto
+```
+
+### Development
+
+```bash
+npm install
+npm run dev  # Watch mode for development
 ```
 
 ## Getting Started
@@ -43,183 +60,7 @@ npm install @fad3y3f/n8n-nodes-mtproto
 
 ### 2. Generate Session String
 
-You have two options to generate a session string:
-
-#### Option A: Using n8n Auth Workflow (Recommended)
-
-Import the authentication workflow below to generate your session string directly in n8n:
-
-<details>
-<summary>📋 Click to expand Auth Workflow JSON</summary>
-
-```json
-{
-  "nodes": [
-    {
-      "parameters": {
-        "options": {
-          "responseMode": "responseNodes"
-        }
-      },
-      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
-      "typeVersion": 1.4,
-      "position": [128, -96],
-      "id": "debaa647-7476-4661-aa4d-055efc0f4182",
-      "name": "Enter /start for start",
-      "webhookId": "0b20cbb1-9762-4067-8311-273edc79711c"
-    },
-    {
-      "parameters": {
-        "message": "Enter 2FA code from Telegram",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chat",
-      "typeVersion": 1,
-      "position": [512, -96],
-      "id": "5b729b14-c25a-493b-b3aa-f8a6f324e714",
-      "name": "Enter 2FA code"
-    },
-    {
-      "parameters": {
-        "message": "={{ $json.message }}\n\n{{ $json.sessionString }}\n\nEnter anything when MTProto API Credentials will be filled.",
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chat",
-      "typeVersion": 1,
-      "position": [1088, -96],
-      "id": "5bc84084-8455-414d-99c4-1563a6c0861a",
-      "name": "Fill MTProto API credentials"
-    },
-    {
-      "parameters": {
-        "message": "={{ $json.message }}",
-        "waitUserReply": false,
-        "options": {}
-      },
-      "type": "@n8n/n8n-nodes-langchain.chat",
-      "typeVersion": 1,
-      "position": [1472, -96],
-      "id": "a49bb600-36a2-47f1-83bd-41c718f982dc",
-      "name": "Confirmation message"
-    },
-    {
-      "parameters": {
-        "content": "## Auth in Telegram via MTProto",
-        "height": 256,
-        "width": 1600
-      },
-      "type": "n8n-nodes-base.stickyNote",
-      "position": [48, -176],
-      "typeVersion": 1,
-      "id": "afbf5214-4521-4dad-bf42-f6f634ac8ccf",
-      "name": "Sticky Note"
-    },
-    {
-      "parameters": {},
-      "type": "@fad3y3f/n8n-nodes-mtproto.mtProtoAuth",
-      "typeVersion": 1,
-      "position": [320, -96],
-      "id": "4e9f63f7-0be4-4b78-a6dd-bd12868f69aa",
-      "name": "Request code",
-      "credentials": {
-        "mtProtoApi": {
-          "id": "XUqwxRVucm9HMIB9",
-          "name": "MTProto account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "submitCode",
-        "phoneCodeHash": "={{ $('Request code').item.json.phoneCodeHash }}",
-        "phoneCode": "={{ $json.chatInput }}",
-        "tempSession": "={{ $('Request code').item.json.tempSession }}"
-      },
-      "type": "@fad3y3f/n8n-nodes-mtproto.mtProtoAuth",
-      "typeVersion": 1,
-      "position": [704, -96],
-      "id": "a83fa8b9-40ab-4744-9ecc-d32dfb4f78e5",
-      "name": "Submit verification code",
-      "credentials": {
-        "mtProtoApi": {
-          "id": "XUqwxRVucm9HMIB9",
-          "name": "MTProto account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "submit2FA"
-      },
-      "type": "@fad3y3f/n8n-nodes-mtproto.mtProtoAuth",
-      "typeVersion": 1,
-      "position": [896, -96],
-      "id": "73a7592f-d79a-4277-b11b-b6e23f6be0f8",
-      "name": "Submit 2FA password",
-      "credentials": {
-        "mtProtoApi": {
-          "id": "XUqwxRVucm9HMIB9",
-          "name": "MTProto account"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "operation": "checkSession"
-      },
-      "type": "@fad3y3f/n8n-nodes-mtproto.mtProtoAuth",
-      "typeVersion": 1,
-      "position": [1280, -96],
-      "id": "41740406-031a-45f3-9399-ede59b23109c",
-      "name": "Check session",
-      "credentials": {
-        "mtProtoApi": {
-          "id": "XUqwxRVucm9HMIB9",
-          "name": "MTProto account"
-        }
-      }
-    }
-  ],
-  "connections": {
-    "Enter /start for start": {
-      "main": [[{"node": "Request code", "type": "main", "index": 0}]]
-    },
-    "Enter 2FA code": {
-      "main": [[{"node": "Submit verification code", "type": "main", "index": 0}]]
-    },
-    "Fill MTProto API credentials": {
-      "main": [[{"node": "Check session", "type": "main", "index": 0}]]
-    },
-    "Request code": {
-      "main": [[{"node": "Enter 2FA code", "type": "main", "index": 0}]]
-    },
-    "Submit verification code": {
-      "main": [[{"node": "Submit 2FA password", "type": "main", "index": 0}]]
-    },
-    "Submit 2FA password": {
-      "main": [[{"node": "Fill MTProto API credentials", "type": "main", "index": 0}]]
-    },
-    "Check session": {
-      "main": [[{"node": "Confirmation message", "type": "main", "index": 0}]]
-    }
-  },
-  "pinData": {}
-}
-```
-
-</details>
-
-**How to use the Auth Workflow:**
-
-1. Import the workflow JSON above into n8n
-2. Create MTProto API credentials with your `api_id`, `api_hash`, and phone number (leave session string empty)
-3. Activate the workflow and open the Chat Trigger URL
-4. Type `/start` to begin the authentication
-5. Enter the verification code sent to your Telegram
-6. Enter your 2FA password (if enabled)
-7. Copy the generated session string to your MTProto API credentials
-
-#### Option B: Using CLI Script
+Before using the nodes, you need to generate a session string:
 
 ```bash
 npm install
@@ -232,6 +73,8 @@ Follow the prompts:
 3. Enter your phone number (with country code)
 4. Enter the verification code sent to Telegram
 5. Enter 2FA password (if enabled)
+
+Copy the generated session string - you'll need it for the credentials.
 
 ### 3. Configure Credentials in n8n
 
@@ -286,15 +129,6 @@ Main node for interacting with Telegram.
 **User**
 - `Get` - Get user information
 - `Get Photos` - Get user profile photos
-
-### MTProto Auth
-
-Node for authentication operations:
-
-- `Request Code` - Send verification code to phone number
-- `Submit Code` - Submit the verification code
-- `Submit 2FA` - Submit two-factor authentication password
-- `Check Session` - Verify session is active and get session string
 
 ### MTProto Trigger (Experimental)
 
@@ -369,7 +203,10 @@ When sending media:
 
 ### "Phone code required" Error
 
-Your session string is invalid or expired. Generate a new one using the Auth Workflow or CLI script.
+Your session string is invalid or expired. Generate a new one using:
+```bash
+npx ts-node scripts/generate-session.ts
+```
 
 ### "AUTH_KEY_UNREGISTERED" Error
 
