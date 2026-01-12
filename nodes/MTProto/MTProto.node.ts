@@ -520,6 +520,43 @@ export class MTProto implements INodeType {
 				description: 'Caption for the media',
 			},
 
+			// Filter type for channel members
+			{
+				displayName: 'Participants Type',
+				name: 'participantsType',
+				type: 'options',
+				default: 'recent',
+				displayOptions: {
+					show: {
+						resource: ['channel'],
+						operation: ['getMembers'],
+					},
+				},
+				options: [
+					{
+						name: 'Recent',
+						value: 'recent',
+						description: 'Recent participants',
+					},
+					{
+						name: 'Admins',
+						value: 'admins',
+						description: 'Channel administrators',
+					},
+					{
+						name: 'Kicked',
+						value: 'kicked',
+						description: 'Kicked users',
+					},
+					{
+						name: 'Banned',
+						value: 'banned',
+						description: 'Banned users',
+					},
+				],
+				description: 'Type of participants to retrieve',
+			},
+
 			// Return All toggle for channel getMembers
 			{
 				displayName: 'Return All',
@@ -845,9 +882,10 @@ export class MTProto implements INodeType {
 							result = await client.getChannelInfo(chatId);
 						} else if (operation === 'getMembers') {
 							const chatId = this.getNodeParameter('chatId', i) as string;
+							const participantsType = this.getNodeParameter('participantsType', i) as string;
 							const returnAll = this.getNodeParameter('returnAll', i) as boolean;
 							const limit = returnAll ? 0 : this.getNodeParameter('limitMembers', i) as number;
-							result = await client.getChannelMembers(chatId, limit, returnAll);
+							result = await client.getChannelMembers(chatId, limit, returnAll, participantsType);
 						}
 					}
 

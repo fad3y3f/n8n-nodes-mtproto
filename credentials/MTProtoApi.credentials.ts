@@ -1,4 +1,6 @@
 import {
+	IAuthenticateGeneric,
+	ICredentialTestRequest,
 	ICredentialType,
 	INodeProperties,
 } from 'n8n-workflow';
@@ -80,4 +82,13 @@ export class MTProtoApi implements ICredentialType {
 			description: 'Application version shown in Telegram sessions',
 		},
 	];
+
+	// Credential test - validates that required fields are present
+	test: ICredentialTestRequest = {
+		request: {
+			baseURL: 'https://my.telegram.org',
+			url: '/',
+			method: 'GET',
+		},
+	};
 }

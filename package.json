@@ -1,6 +1,6 @@
 {
   "name": "@fad3y3f/n8n-nodes-mtproto",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "n8n nodes for Telegram MTProto API with integrated telegram client",
   "keywords": [
     "n8n-community-node-package",

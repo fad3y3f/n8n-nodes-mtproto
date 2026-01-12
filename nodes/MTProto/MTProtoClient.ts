@@ -353,7 +353,7 @@ export class MTProtoClient {
 		return this.formatEntity(entity);
 	}
 
-	async getChannelMembers(chatId: string, limit: number = 200, returnAll: boolean = false): Promise<any[]> {
+	async getChannelMembers(chatId: string, limit: number = 200, returnAll: boolean = false, participantsType: string = 'recent'): Promise<any[]> {
 		const entity = await this.client.getEntity(chatId);
 
 		if (entity instanceof Api.Channel) {
@@ -361,6 +361,24 @@ export class MTProtoClient {
 			const batchSize = 200; // Telegram API max per request
 			let offset = 0;
 			let hasMore = true;
+
+			// Determine the filter based on participants type
+			let filter: Api.TypeChannelParticipantsFilter;
+			switch (participantsType) {
+				case 'admins':
+					filter = new Api.ChannelParticipantsAdmins();
+					break;
+				case 'kicked':
+					filter = new Api.ChannelParticipantsKicked({ q: '' });
+					break;
+				case 'banned':
+					filter = new Api.ChannelParticipantsBanned({ q: '' });
+					break;
+				case 'recent':
+				default:
+					filter = new Api.ChannelParticipantsRecent();
+					break;
+			}
 
 			while (hasMore) {
 				const currentLimit = returnAll ? batchSize : Math.min(batchSize, limit - allMembers.length);
@@ -372,7 +390,7 @@ export class MTProtoClient {
 				const result = await this.client.invoke(
 					new Api.channels.GetParticipants({
 						channel: entity as unknown as Api.InputChannel,
-						filter: new Api.ChannelParticipantsSearch({ q: '' }), // Empty search returns all members
+						filter,
 						offset,
 						limit: currentLimit,
 						hash: bigInt(0),
