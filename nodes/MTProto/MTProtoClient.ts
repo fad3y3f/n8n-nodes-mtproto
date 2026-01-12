@@ -398,14 +398,28 @@ export class MTProtoClient {
 				);
 
 				if (result instanceof Api.channels.ChannelParticipants) {
-					const users = result.users.map(user => this.formatUser(user));
-					allMembers.push(...users);
+					// Create a map of users by ID for quick lookup
+					const usersMap = new Map<string, any>();
+					for (const user of result.users) {
+						const formatted = this.formatUser(user);
+						if (formatted && formatted.id) {
+							usersMap.set(formatted.id, formatted);
+						}
+					}
+
+					// Process participants and add status information
+					for (const participant of result.participants) {
+						const participantInfo = this.formatChannelParticipant(participant, usersMap);
+						if (participantInfo) {
+							allMembers.push(participantInfo);
+						}
+					}
 					
 					// Check if we got fewer results than requested (no more members)
-					if (users.length < currentLimit) {
+					if (result.participants.length < currentLimit) {
 						hasMore = false;
 					} else {
-						offset += users.length;
+						offset += result.participants.length;
 					}
 					
 					// Stop if we reached the limit (when not returnAll)
@@ -421,6 +435,133 @@ export class MTProtoClient {
 		}
 
 		return [];
+	}
+
+	private formatChannelParticipant(participant: Api.TypeChannelParticipant, usersMap: Map<string, any>): any {
+		let userId: string | undefined;
+		let participantStatus: string;
+		let participantInfo: any = {};
+
+		if (participant instanceof Api.ChannelParticipant) {
+			userId = participant.userId?.toString();
+			participantStatus = 'member';
+			participantInfo = {
+				date: participant.date,
+			};
+		} else if (participant instanceof Api.ChannelParticipantSelf) {
+			userId = participant.userId?.toString();
+			participantStatus = 'self';
+			participantInfo = {
+				date: participant.date,
+				inviterId: participant.inviterId?.toString(),
+				viaRequest: participant.viaRequest,
+			};
+		} else if (participant instanceof Api.ChannelParticipantCreator) {
+			userId = participant.userId?.toString();
+			participantStatus = 'creator';
+			participantInfo = {
+				rank: participant.rank,
+				adminRights: this.formatAdminRights(participant.adminRights),
+			};
+		} else if (participant instanceof Api.ChannelParticipantAdmin) {
+			userId = participant.userId?.toString();
+			participantStatus = 'admin';
+			participantInfo = {
+				date: participant.date,
+				promotedBy: participant.promotedBy?.toString(),
+				inviterId: participant.inviterId?.toString(),
+				canEdit: participant.canEdit,
+				rank: participant.rank,
+				adminRights: this.formatAdminRights(participant.adminRights),
+			};
+		} else if (participant instanceof Api.ChannelParticipantBanned) {
+			// For banned participants, the peer can be a user or channel
+			const peer = participant.peer;
+			if (peer instanceof Api.PeerUser) {
+				userId = peer.userId?.toString();
+			} else if (peer instanceof Api.PeerChannel) {
+				userId = peer.channelId?.toString();
+			}
+			// Determine if kicked or banned based on the 'left' flag
+			participantStatus = participant.left ? 'kicked' : 'banned';
+			participantInfo = {
+				date: participant.date,
+				kickedBy: participant.kickedBy?.toString(),
+				bannedRights: this.formatBannedRights(participant.bannedRights),
+				left: participant.left,
+			};
+		} else if (participant instanceof Api.ChannelParticipantLeft) {
+			const peer = participant.peer;
+			if (peer instanceof Api.PeerUser) {
+				userId = peer.userId?.toString();
+			} else if (peer instanceof Api.PeerChannel) {
+				userId = peer.channelId?.toString();
+			}
+			participantStatus = 'left';
+			participantInfo = {};
+		} else {
+			return null;
+		}
+
+		if (!userId) {
+			return null;
+		}
+
+		const user = usersMap.get(userId);
+		
+		return {
+			...user,
+			participantStatus,
+			participantInfo,
+		};
+	}
+
+	private formatAdminRights(rights: Api.ChatAdminRights | undefined): any {
+		if (!rights) return null;
+		return {
+			changeInfo: rights.changeInfo,
+			postMessages: rights.postMessages,
+			editMessages: rights.editMessages,
+			deleteMessages: rights.deleteMessages,
+			banUsers: rights.banUsers,
+			inviteUsers: rights.inviteUsers,
+			pinMessages: rights.pinMessages,
+			addAdmins: rights.addAdmins,
+			anonymous: rights.anonymous,
+			manageCall: rights.manageCall,
+			other: rights.other,
+			manageTopics: rights.manageTopics,
+			postStories: rights.postStories,
+			editStories: rights.editStories,
+			deleteStories: rights.deleteStories,
+		};
+	}
+
+	private formatBannedRights(rights: Api.ChatBannedRights | undefined): any {
+		if (!rights) return null;
+		return {
+			viewMessages: rights.viewMessages,
+			sendMessages: rights.sendMessages,
+			sendMedia: rights.sendMedia,
+			sendStickers: rights.sendStickers,
+			sendGifs: rights.sendGifs,
+			sendGames: rights.sendGames,
+			sendInline: rights.sendInline,
+			embedLinks: rights.embedLinks,
+			sendPolls: rights.sendPolls,
+			changeInfo: rights.changeInfo,
+			inviteUsers: rights.inviteUsers,
+			pinMessages: rights.pinMessages,
+			manageTopics: rights.manageTopics,
+			sendPhotos: rights.sendPhotos,
+			sendVideos: rights.sendVideos,
+			sendRoundvideos: rights.sendRoundvideos,
+			sendAudios: rights.sendAudios,
+			sendVoices: rights.sendVoices,
+			sendDocs: rights.sendDocs,
+			sendPlain: rights.sendPlain,
+			untilDate: rights.untilDate,
+		};
 	}
 
 	// ========== CONTACT OPERATIONS ==========
